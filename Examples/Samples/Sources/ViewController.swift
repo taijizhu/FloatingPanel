@@ -283,10 +283,6 @@ class DebugTextViewController: UIViewController, UITextViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         textView.delegate = self
-
-        if #available(iOS 11.0, *) {
-            textView.contentInsetAdjustmentBehavior = .never
-        }
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
