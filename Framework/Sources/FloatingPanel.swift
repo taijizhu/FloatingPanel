@@ -656,18 +656,17 @@ class FloatingPanel: NSObject, UIGestureRecognizerDelegate, UIScrollViewDelegate
             let target: FloatingPanelPosition
             let forwardYDirection: Bool
 
+            /*
+             NOTE: No skip the half position.
+             full -> half -> tip OR full <- half <- tip
+             */
             switch state {
             case .full:
                 target = .half
                 forwardYDirection = true
             case .half:
-                if (currentY < middleY) {
-                    target = .full
-                    forwardYDirection = false
-                } else {
-                    target = .tip
-                    forwardYDirection = true
-                }
+                target = (currentY > middleY) ? .tip : .full
+                forwardYDirection = (currentY > middleY)
             case .tip:
                 target = .half
                 forwardYDirection = false
