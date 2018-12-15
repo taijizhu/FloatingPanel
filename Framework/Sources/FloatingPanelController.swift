@@ -295,8 +295,13 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
         } else {
             parent.view.addSubview(self.view)
         }
-
-        view.frame = parent.view.bounds // MUST
+        self.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            self.view.topAnchor.constraint(equalTo: parent.view.topAnchor, constant: 0.0),
+            self.view.leftAnchor.constraint(equalTo: parent.view.leftAnchor, constant: 0.0),
+            self.view.rightAnchor.constraint(equalTo: parent.view.rightAnchor, constant: 0.0),
+            self.view.bottomAnchor.constraint(equalTo: parent.view.bottomAnchor, constant: 0.0),
+            ])
 
         parent.addChild(self)
 
