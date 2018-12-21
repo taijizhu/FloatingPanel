@@ -47,7 +47,7 @@ public extension FloatingPanelControllerDelegate {
     func floatingPanelDidEndRemove(_ vc: FloatingPanelController) {}
 }
 
-public enum FloatingPanelPosition: Int, CaseIterable {
+@objc public enum FloatingPanelPosition: Int, CaseIterable {
     case full
     case half
     case tip
@@ -57,7 +57,7 @@ public enum FloatingPanelPosition: Int, CaseIterable {
 ///
 /// A container view controller to display a floating panel to present contents in parallel as a user wants.
 ///
-public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UIGestureRecognizerDelegate {
+@objc public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UIGestureRecognizerDelegate {
     /// Constants indicating how safe area insets are added to the adjusted content inset.
     public enum ContentInsetAdjustmentBehavior: Int {
         case always
@@ -259,7 +259,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
     // MARK: - Container view controller interface
 
     /// Shows the surface view at the initial position defined by the current layout
-    public func show(animated: Bool = false, completion: (() -> Void)? = nil) {
+    @objc public func show(animated: Bool = false, completion: (() -> Void)? = nil) {
         // Must apply the current layout here
         updateLayout(for: traitCollection)
         move(to: floatingPanel.layoutAdapter.layout.initialPosition,
@@ -268,7 +268,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
     }
 
     /// Hides the surface view to the hidden position
-    public func hide(animated: Bool = false, completion: (() -> Void)? = nil) {
+    @objc public func hide(animated: Bool = false, completion: (() -> Void)? = nil) {
         move(to: .hidden,
              animated: animated,
              completion: completion)
@@ -279,7 +279,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
     ///     - parent: A parent view controller object that displays FloatingPanelController's view. A container view controller object isn't applicable.
     ///     - belowView: Insert the surface view managed by the controller below the specified view. By default, the surface view will be added to the end of the parent list of subviews.
     ///     - animated: Pass true to animate the presentation; otherwise, pass false.
-    public func addPanel(toParent parent: UIViewController, belowView: UIView? = nil, animated: Bool = false) {
+    @objc public func addPanel(toParent parent: UIViewController, belowView: UIView? = nil, animated: Bool = false) {
         guard self.parent == nil else {
             log.warning("Already added to a parent(\(parent))")
             return
@@ -310,7 +310,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
     /// - Parameters:
     ///     - animated: Pass true to animate the presentation; otherwise, pass false.
     ///     - completion: The block to execute after the view controller is dismissed. This block has no return value and takes no parameters. You may specify nil for this parameter.
-    public func removePanelFromParent(animated: Bool, completion: (() -> Void)? = nil) {
+    @objc public func removePanelFromParent(animated: Bool, completion: (() -> Void)? = nil) {
         guard self.parent != nil else {
             completion?()
             return
