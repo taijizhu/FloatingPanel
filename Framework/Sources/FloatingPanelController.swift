@@ -374,7 +374,7 @@ public extension FloatingPanelControllerDelegate {
     /// - Attention:
     ///     The specified scroll view must be already assigned to the delegate property because the controller intermediates between the various delegate methods.
     ///
-    public func track(scrollView: UIScrollView) {
+    @objc public func track(scrollView: UIScrollView) {
         floatingPanel.scrollView = scrollView
         if scrollView.delegate !== floatingPanel {
             floatingPanel.userScrollViewDelegate = scrollView.delegate
