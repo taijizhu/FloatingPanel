@@ -119,8 +119,8 @@ public extension FloatingPanelControllerDelegate {
     }
 
     /// The view controller responsible for the content portion of the floating panel.
-    public var contentViewController: UIViewController? {
-        set { set(contentViewController: newValue) }
+    @objc public var contentViewController: UIViewController? {
+        set { setContent(contentViewController: newValue) }
         get { return _contentViewController }
     }
     private var _contentViewController: UIViewController?
@@ -336,7 +336,7 @@ public extension FloatingPanelControllerDelegate {
     }
 
     /// Sets the view controller responsible for the content portion of the floating panel..
-    @objc public func set(contentViewController: UIViewController?) {
+    @objc public func setContent(contentViewController: UIViewController?) {
         if let vc = _contentViewController {
             vc.willMove(toParent: nil)
             vc.view.removeFromSuperview()
