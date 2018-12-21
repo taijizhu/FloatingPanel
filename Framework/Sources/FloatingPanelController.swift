@@ -336,7 +336,7 @@ public extension FloatingPanelControllerDelegate {
     }
 
     /// Sets the view controller responsible for the content portion of the floating panel..
-    public func set(contentViewController: UIViewController?) {
+    @objc public func set(contentViewController: UIViewController?) {
         if let vc = _contentViewController {
             vc.willMove(toParent: nil)
             vc.view.removeFromSuperview()
