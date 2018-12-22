@@ -68,27 +68,27 @@ public extension FloatingPanelControllerDelegate {
     public weak var delegate: FloatingPanelControllerDelegate?
 
     /// Returns the surface view managed by the controller object. It's the same as `self.view`.
-    public var surfaceView: FloatingPanelSurfaceView! {
+    @objc public var surfaceView: FloatingPanelSurfaceView! {
         return floatingPanel.surfaceView
     }
 
     /// Returns the backdrop view managed by the controller object.
-    public var backdropView: FloatingPanelBackdropView! {
+    @objc public var backdropView: FloatingPanelBackdropView! {
         return floatingPanel.backdropView
     }
 
     /// Returns the scroll view that the controller tracks.
-    public weak var scrollView: UIScrollView? {
+    @objc public weak var scrollView: UIScrollView? {
         return floatingPanel.scrollView
     }
 
     // The underlying gesture recognizer for pan gestures
-    public var panGestureRecognizer: UIPanGestureRecognizer {
+    @objc public var panGestureRecognizer: UIPanGestureRecognizer {
         return floatingPanel.panGesture
     }
 
     /// The current position of the floating panel controller's contents.
-    public var position: FloatingPanelPosition {
+    @objc public var position: FloatingPanelPosition {
         return floatingPanel.state
     }
 
@@ -103,7 +103,7 @@ public extension FloatingPanelControllerDelegate {
     }
 
     /// The content insets of the tracking scroll view derived from this safe area
-    public var adjustedContentInsets: UIEdgeInsets {
+    @objc public var adjustedContentInsets: UIEdgeInsets {
         return floatingPanel.layoutAdapter.adjustedContentInsets
     }
 
@@ -113,7 +113,7 @@ public extension FloatingPanelControllerDelegate {
     public var contentInsetAdjustmentBehavior: ContentInsetAdjustmentBehavior = .always
 
     /// A Boolean value that determines whether the removal interaction is enabled.
-    public var isRemovalInteractionEnabled: Bool {
+    @objc public var isRemovalInteractionEnabled: Bool {
         set { floatingPanel.isRemovalInteractionEnabled = newValue }
         get { return floatingPanel.isRemovalInteractionEnabled }
     }
