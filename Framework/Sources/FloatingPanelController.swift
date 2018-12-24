@@ -330,7 +330,7 @@ public extension FloatingPanelControllerDelegate {
     ///     - to: Pass a FloatingPanelPosition value to move the surface view to the position.
     ///     - animated: Pass true to animate the presentation; otherwise, pass false.
     ///     - completion: The block to execute after the view controller has finished moving. This block has no return value and takes no parameters. You may specify nil for this parameter.
-    public func move(to: FloatingPanelPosition, animated: Bool, completion: (() -> Void)? = nil) {
+    @objc public func move(to: FloatingPanelPosition, animated: Bool, completion: (() -> Void)? = nil) {
         precondition(floatingPanel.layoutAdapter.vc != nil, "Use show(animated:completion)")
         floatingPanel.move(to: to, animated: animated, completion: completion)
     }

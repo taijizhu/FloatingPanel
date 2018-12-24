@@ -7,7 +7,7 @@ import UIKit
 ///
 /// FloatingPanel presentation model
 ///
-class FloatingPanel: NSObject, UIGestureRecognizerDelegate, UIScrollViewDelegate {
+@objc class FloatingPanel: NSObject, UIGestureRecognizerDelegate, UIScrollViewDelegate {
     /* Cause 'terminating with uncaught exception of type NSException' error on Swift Playground
      unowned let view: UIView
      */
@@ -111,7 +111,7 @@ class FloatingPanel: NSObject, UIGestureRecognizerDelegate, UIScrollViewDelegate
         backdropView.frame = view.bounds
     }
 
-    func move(to: FloatingPanelPosition, animated: Bool, completion: (() -> Void)? = nil) {
+    @objc func move(to: FloatingPanelPosition, animated: Bool, completion: (() -> Void)? = nil) {
         move(from: state, to: to, animated: animated, completion: completion)
     }
 
@@ -247,7 +247,7 @@ class FloatingPanel: NSObject, UIGestureRecognizerDelegate, UIScrollViewDelegate
         }
     }
 
-    var grabberAreaFrame: CGRect {
+    @objc var grabberAreaFrame: CGRect {
         let grabberAreaFrame = CGRect(x: surfaceView.bounds.origin.x,
                                      y: surfaceView.bounds.origin.y,
                                      width: surfaceView.bounds.width,
