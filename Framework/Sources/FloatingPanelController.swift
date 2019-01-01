@@ -141,7 +141,8 @@ public extension FloatingPanelControllerDelegate {
     }
 
     private func setUp() {
-        _ = FloatingPanelController.dismissSwizzling
+        // kcao: disable this since it is causing other problems.
+        // _ = FloatingPanelController.dismissSwizzling
 
         modalPresentationStyle = .custom
         transitioningDelegate = modalTransition
