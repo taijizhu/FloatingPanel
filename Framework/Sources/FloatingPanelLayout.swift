@@ -5,12 +5,30 @@
 
 import UIKit
 
+/// FloatingPanelFullScreenLayout
+///
+/// Use the layout protocol if you configure full, half and tip insets from the superview, not the safe area.
+/// It can't be used with FloatingPanelIntrinsicLayout.
+public protocol FloatingPanelFullScreenLayout: FloatingPanelLayout { }
+
+public extension FloatingPanelFullScreenLayout {
+    var positionReference: FloatingPanelLayoutReference {
+        return .fromSuperview
+    }
+}
+
 /// FloatingPanelIntrinsicLayout
 ///
+/// Use the layout protocol if you want to layout a panel using the intrinsic height.
+/// It can't be used with `FloatingPanelFullScreenLayout`.
+///
 /// - Attention:
-///     `insetFor(position:)` must return `nil` for full position because the inset is determined automatically.
-///     You can customize insets only for half, tip and hidden positions
-///     on FloatingPanelIntrinsicLayout.
+///     `insetFor(position:)` must return `nil` for the full position. Because
+///     the inset is determined automatically by the intrinsic height.
+///     You can customize insets only for the half, tip and hidden positions.
+///
+/// - Note:
+///     By default, the `positionReference` is set to `.fromSafeArea`.
 public protocol FloatingPanelIntrinsicLayout: FloatingPanelLayout { }
 
 public extension FloatingPanelIntrinsicLayout {
@@ -25,6 +43,15 @@ public extension FloatingPanelIntrinsicLayout {
     func insetFor(position: FloatingPanelPosition) -> CGFloat? {
         return nil
     }
+
+    var positionReference: FloatingPanelLayoutReference {
+        return .fromSafeArea
+    }
+}
+
+public enum FloatingPanelLayoutReference: Int {
+    case fromSafeArea = 0
+    case fromSuperview = 1
 }
 
 public protocol FloatingPanelLayout: class {
@@ -34,19 +61,21 @@ public protocol FloatingPanelLayout: class {
     /// Returns a set of FloatingPanelPosition objects to tell the applicable
     /// positions of the floating panel controller.
     ///
-    /// By default, it returns all position exepct for `hidden` position. Because
-    /// it's always supported by `FloatingPanelController` so you don't need to return it.
+    /// By default, it returns full, half and tip positions.
     var supportedPositions: Set<FloatingPanelPosition> { get }
 
     /// Return the interaction buffer to the top from the top position. Default is 6.0.
     var topInteractionBuffer: CGFloat { get }
 
     /// Return the interaction buffer to the bottom from the bottom position. Default is 6.0.
+    ///
+    /// - Important:
+    /// The specified buffer is ignored when `FloatingPanelController.isRemovalInteractionEnabled` is set to true.
     var bottomInteractionBuffer: CGFloat { get }
 
     /// Returns a CGFloat value to determine a Y coordinate of a floating panel for each position(full, half, tip and hidden).
     ///
-    /// Its returning value indicates a different inset for each positiion.
+    /// Its returning value indicates a different inset for each position.
     /// For full position, a top inset from a safe area in `FloatingPanelController.view`.
     /// For half or tip position, a bottom inset from the safe area.
     /// For hidden position, a bottom inset from `FloatingPanelController.view`.
@@ -63,6 +92,9 @@ public protocol FloatingPanelLayout: class {
     ///
     /// Default is 0.3 at full position, otherwise 0.0.
     func backdropAlphaFor(position: FloatingPanelPosition) -> CGFloat
+
+    var positionReference: FloatingPanelLayoutReference { get }
+
 }
 
 public extension FloatingPanelLayout {
@@ -72,7 +104,7 @@ public extension FloatingPanelLayout {
     var supportedPositions: Set<FloatingPanelPosition> {
         return Set([.full, .half, .tip])
     }
-    
+
     func prepareLayout(surfaceView: UIView, in view: UIView) -> [NSLayoutConstraint] {
         return [
             surfaceView.leftAnchor.constraint(equalTo: view.sideLayoutGuide.leftAnchor, constant: 0.0),
@@ -83,11 +115,15 @@ public extension FloatingPanelLayout {
     func backdropAlphaFor(position: FloatingPanelPosition) -> CGFloat {
         return position == .full ? 0.3 : 0.0
     }
+
+    var positionReference: FloatingPanelLayoutReference {
+        return .fromSafeArea
+    }
 }
 
 public class FloatingPanelDefaultLayout: FloatingPanelLayout {
-    public var contentViewController: UIViewController?
-    
+    public init() { }
+
     public var initialPosition: FloatingPanelPosition {
         return .half
     }
@@ -103,8 +139,8 @@ public class FloatingPanelDefaultLayout: FloatingPanelLayout {
 }
 
 public class FloatingPanelDefaultLandscapeLayout: FloatingPanelLayout {
-    public var contentViewController: UIViewController?
-    
+    public init() { }
+
     public var initialPosition: FloatingPanelPosition {
         return .tip
     }
@@ -121,29 +157,38 @@ public class FloatingPanelDefaultLandscapeLayout: FloatingPanelLayout {
     }
 }
 
+struct LayoutSegment {
+    let lower: FloatingPanelPosition?
+    let upper: FloatingPanelPosition?
+}
 
 class FloatingPanelLayoutAdapter {
-    weak var vc: UIViewController!
+    weak var vc: FloatingPanelController!
     private weak var surfaceView: FloatingPanelSurfaceView!
     private weak var backdropView: FloatingPanelBackdropView!
 
-    var layout: FloatingPanelLayout
-
-    var safeAreaInsets: UIEdgeInsets = .zero {
+    var layout: FloatingPanelLayout {
         didSet {
-            if oldValue != safeAreaInsets {
-                updateHeight()
-            }
+            checkLayoutConsistance()
         }
     }
 
-    private var heightBuffer: CGFloat = 88.0 // For bounce
+    private var safeAreaInsets: UIEdgeInsets {
+        return vc?.layoutInsets ?? .zero
+    }
+
+    private var initialConst: CGFloat = 0.0
+
     private var fixedConstraints: [NSLayoutConstraint] = []
     private var fullConstraints: [NSLayoutConstraint] = []
     private var halfConstraints: [NSLayoutConstraint] = []
     private var tipConstraints: [NSLayoutConstraint] = []
     private var offConstraints: [NSLayoutConstraint] = []
-    private var heightConstraints: [NSLayoutConstraint] = []
+    private var interactiveTopConstraint: NSLayoutConstraint?
+    private var bottomConstraint: NSLayoutConstraint?
+
+
+    private var heightConstraint: NSLayoutConstraint?
 
     private var fullInset: CGFloat {
         if layout is FloatingPanelIntrinsicLayout {
@@ -163,45 +208,32 @@ class FloatingPanelLayoutAdapter {
     }
 
     var supportedPositions: Set<FloatingPanelPosition> {
-        var supportedPositions = layout.supportedPositions
-        supportedPositions.remove(.hidden)
-        return supportedPositions
+        return layout.supportedPositions
+    }
+
+    var topMostState: FloatingPanelPosition {
+        return supportedPositions.sorted(by: { $0.rawValue < $1.rawValue }).first ?? .hidden
+    }
+
+    var bottomMostState: FloatingPanelPosition {
+        return supportedPositions.sorted(by: { $0.rawValue < $1.rawValue }).last ?? .hidden
     }
 
     var topY: CGFloat {
-        if supportedPositions.contains(.full) {
-            if layout is FloatingPanelIntrinsicLayout {
-                return surfaceView.superview!.bounds.height - (safeAreaInsets.bottom + fullInset)
-            } else {
-                return (safeAreaInsets.top + fullInset)
-            }
-        } else {
-            return middleY
-        }
-    }
-
-    var middleY: CGFloat {
-        return surfaceView.superview!.bounds.height - (safeAreaInsets.bottom + halfInset)
+        return positionY(for: topMostState)
     }
 
     var bottomY: CGFloat {
-        if supportedPositions.contains(.tip) {
-            return surfaceView.superview!.bounds.height - (safeAreaInsets.bottom + tipInset)
-        } else {
-            return middleY
-        }
+        return positionY(for: bottomMostState)
     }
 
-    var hiddenY: CGFloat {
-        return surfaceView.superview!.bounds.height
+    var topMaxY: CGFloat {
+        return topY - layout.topInteractionBuffer
     }
 
-    var safeAreaBottomY: CGFloat {
-        return surfaceView.superview!.bounds.height - (safeAreaInsets.bottom + hiddenInset)
+    var bottomMaxY: CGFloat {
+        return bottomY + layout.bottomInteractionBuffer
     }
-
-    var topMaxY: CGFloat { return -safeAreaInsets.top }
-    var bottomMaxY: CGFloat { return safeAreaBottomY }
 
     var adjustedContentInsets: UIEdgeInsets {
         return UIEdgeInsets(top: 0.0,
@@ -213,13 +245,31 @@ class FloatingPanelLayoutAdapter {
     func positionY(for pos: FloatingPanelPosition) -> CGFloat {
         switch pos {
         case .full:
-            return topY
+            if layout is FloatingPanelIntrinsicLayout {
+                return surfaceView.superview!.bounds.height - surfaceView.bounds.height
+            }
+            switch layout.positionReference {
+            case .fromSafeArea:
+                return (safeAreaInsets.top + fullInset)
+            case .fromSuperview:
+                return fullInset
+            }
         case .half:
-            return middleY
+            switch layout.positionReference {
+            case .fromSafeArea:
+                return surfaceView.superview!.bounds.height - (safeAreaInsets.bottom + halfInset)
+            case .fromSuperview:
+                return surfaceView.superview!.bounds.height - halfInset
+            }
         case .tip:
-            return bottomY
+            switch layout.positionReference {
+            case .fromSafeArea:
+                return surfaceView.superview!.bounds.height - (safeAreaInsets.bottom + tipInset)
+            case .fromSuperview:
+                return surfaceView.superview!.bounds.height - tipInset
+            }
         case .hidden:
-            return hiddenY
+            return surfaceView.superview!.bounds.height - hiddenInset
         }
     }
 
@@ -232,17 +282,38 @@ class FloatingPanelLayoutAdapter {
     }
 
     func updateIntrinsicHeight() {
+        #if swift(>=4.2)
         let fittingSize = UIView.layoutFittingCompressedSize
-        intrinsicHeight = surfaceView.contentView.systemLayoutSizeFitting(fittingSize).height
+        #else
+        let fittingSize = UILayoutFittingCompressedSize
+        #endif
+        var intrinsicHeight = surfaceView.contentView?.systemLayoutSizeFitting(fittingSize).height ?? 0.0
+        var safeAreaBottom: CGFloat = 0.0
+        if #available(iOS 11.0, *) {
+            safeAreaBottom = surfaceView.contentView?.safeAreaInsets.bottom ?? 0.0
+            if safeAreaBottom > 0 {
+                intrinsicHeight -= safeAreaInsets.bottom
+            }
+        }
+        self.intrinsicHeight = max(intrinsicHeight, 0.0)
+
+        log.debug("Update intrinsic height =", intrinsicHeight,
+                  ", surface(height) =", surfaceView.frame.height,
+                  ", content(height) =", surfaceView.contentView?.frame.height ?? 0.0,
+                  ", content safe area(bottom) =", safeAreaBottom)
     }
 
-    func prepareLayout(in vc: UIViewController) {
+    func prepareLayout(in vc: FloatingPanelController) {
         self.vc = vc
+
+        NSLayoutConstraint.deactivate(fixedConstraints + fullConstraints + halfConstraints + tipConstraints + offConstraints)
+        NSLayoutConstraint.deactivate(constraint: self.heightConstraint)
+        self.heightConstraint = nil
+        NSLayoutConstraint.deactivate(constraint: self.bottomConstraint)
+        self.bottomConstraint = nil
 
         surfaceView.translatesAutoresizingMaskIntoConstraints = false
         backdropView.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.deactivate(fixedConstraints + fullConstraints + halfConstraints + tipConstraints + offConstraints)
 
         // Fixed constraints of surface and backdrop views
         let surfaceConstraints = layout.prepareLayout(surfaceView: surfaceView, in: vc.view!)
@@ -255,106 +326,230 @@ class FloatingPanelLayoutAdapter {
 
         fixedConstraints = surfaceConstraints + backdropConstraints
 
-        // Flexible surface constarints for full, half, tip and off
-        if layout is FloatingPanelIntrinsicLayout {
-            updateIntrinsicHeight()
+        if vc.contentMode == .fitToBounds {
+            bottomConstraint = surfaceView.bottomAnchor.constraint(equalTo: vc.view.bottomAnchor,
+                                                                   constant: 0.0)
+        }
+
+        // Flexible surface constraints for full, half, tip and off
+        let topAnchor: NSLayoutYAxisAnchor = {
+            if layout.positionReference == .fromSuperview {
+                return vc.view.topAnchor
+            } else {
+                return vc.layoutGuide.topAnchor
+            }
+        }()
+
+        switch layout {
+        case is FloatingPanelIntrinsicLayout:
+            // Set up on updateHeight()
+            break
+        default:
             fullConstraints = [
-                surfaceView.topAnchor.constraint(equalTo: vc.layoutGuide.bottomAnchor,
-                                                 constant: -fullInset),
-            ]
-        } else {
-            fullConstraints = [
-                surfaceView.topAnchor.constraint(equalTo: vc.layoutGuide.topAnchor,
+                surfaceView.topAnchor.constraint(equalTo: topAnchor,
                                                  constant: fullInset),
             ]
         }
+
+        let bottomAnchor: NSLayoutYAxisAnchor = {
+            if layout.positionReference == .fromSuperview {
+                return vc.view.bottomAnchor
+            } else {
+                return vc.layoutGuide.bottomAnchor
+            }
+        }()
+
         halfConstraints = [
-            surfaceView.topAnchor.constraint(equalTo: vc.layoutGuide.bottomAnchor,
+            surfaceView.topAnchor.constraint(equalTo: bottomAnchor,
                                              constant: -halfInset),
         ]
         tipConstraints = [
-            surfaceView.topAnchor.constraint(equalTo: vc.layoutGuide.bottomAnchor,
+            surfaceView.topAnchor.constraint(equalTo: bottomAnchor,
                                              constant: -tipInset),
         ]
+
         offConstraints = [
-            surfaceView.topAnchor.constraint(equalTo: vc.view.bottomAnchor,
+            surfaceView.topAnchor.constraint(equalTo:vc.view.bottomAnchor,
                                              constant: -hiddenInset),
         ]
+    }
+
+    func startInteraction(at state: FloatingPanelPosition, offset: CGPoint = .zero) {
+        guard self.interactiveTopConstraint == nil else { return }
+        NSLayoutConstraint.deactivate(fullConstraints + halfConstraints + tipConstraints + offConstraints)
+
+        let interactiveTopConstraint: NSLayoutConstraint
+        switch layout.positionReference {
+        case .fromSafeArea:
+            initialConst = surfaceView.frame.minY - safeAreaInsets.top + offset.y
+            interactiveTopConstraint = surfaceView.topAnchor.constraint(equalTo: vc.layoutGuide.topAnchor,
+                                                                        constant: initialConst)
+        case .fromSuperview:
+            initialConst = surfaceView.frame.minY + offset.y
+            interactiveTopConstraint = surfaceView.topAnchor.constraint(equalTo: vc.view.topAnchor,
+                                                                        constant: initialConst)
+        }
+        NSLayoutConstraint.activate([interactiveTopConstraint])
+        self.interactiveTopConstraint = interactiveTopConstraint
+    }
+
+    func endInteraction(at state: FloatingPanelPosition) {
+        // Don't deactivate `interactiveTopConstraint` here because it leads to
+        // unsatisfiable constraints
+
+        if self.interactiveTopConstraint == nil {
+            // Actiavate `interactiveTopConstraint` for `fitToBounds` mode.
+            // It goes throught this path when the pan gesture state jumps
+            // from .begin to .end.
+            startInteraction(at: state)
+        }
     }
 
     // The method is separated from prepareLayout(to:) for the rotation support
     // It must be called in FloatingPanelController.traitCollectionDidChange(_:)
     func updateHeight() {
         guard let vc = vc else { return }
+        NSLayoutConstraint.deactivate(constraint: heightConstraint)
+        heightConstraint = nil
+
+        if layout is FloatingPanelIntrinsicLayout {
+            updateIntrinsicHeight()
+        }
         defer {
-            UIView.performWithoutAnimation {
-                surfaceView.superview!.layoutIfNeeded()
+            if layout is FloatingPanelIntrinsicLayout {
+                NSLayoutConstraint.deactivate(fullConstraints)
+                fullConstraints = [
+                    surfaceView.topAnchor.constraint(equalTo: vc.layoutGuide.bottomAnchor,
+                                                     constant: -fullInset),
+                ]
             }
         }
 
-        NSLayoutConstraint.deactivate(heightConstraints)
+        guard vc.contentMode != .fitToBounds else { return }
 
-        let height: CGFloat
-        if layout is FloatingPanelIntrinsicLayout {
-            updateIntrinsicHeight()
-            height = intrinsicHeight + safeAreaInsets.bottom
-        } else {
-            // Must use the`vc` height, not the screen height because safe area insets
-            // of `vc` are relative values. For example, a view controller in
-            // Navigation controller's safe area insets and frame can be changed whether
-            // the navigation bar is translucent or not.
-            height = vc.view.bounds.height - (safeAreaInsets.top + fullInset)
+        switch layout {
+        case is FloatingPanelIntrinsicLayout:
+            heightConstraint = surfaceView.heightAnchor.constraint(equalToConstant: intrinsicHeight + safeAreaInsets.bottom)
+        default:
+            let const = -(positionY(for: topMostState))
+            heightConstraint =  surfaceView.heightAnchor.constraint(equalTo: vc.view.heightAnchor,
+                                                                    constant: const)
+        }
+        NSLayoutConstraint.activate(constraint: heightConstraint)
+
+        surfaceView.bottomOverflow = vc.view.bounds.height + layout.topInteractionBuffer
+    }
+
+    func updateInteractiveTopConstraint(diff: CGFloat, allowsTopBuffer: Bool, with behavior: FloatingPanelBehavior) {
+        defer {
+            layoutSurfaceIfNeeded() // MUST be called to update `surfaceView.frame`
         }
 
-        heightConstraints = [
-            surfaceView.heightAnchor.constraint(equalToConstant: height)
-        ]
-        NSLayoutConstraint.activate(heightConstraints)
-        surfaceView.set(bottomOverflow: heightBuffer + layout.topInteractionBuffer)
+        let topMostConst: CGFloat = {
+            var ret: CGFloat = 0.0
+            switch layout.positionReference {
+            case .fromSafeArea:
+                ret = topY - safeAreaInsets.top
+            case .fromSuperview:
+                ret = topY
+            }
+            return max(ret, 0.0) // The top boundary is equal to the related topAnchor.
+        }()
+        let bottomMostConst: CGFloat = {
+            var ret: CGFloat = 0.0
+            let _bottomY = vc.isRemovalInteractionEnabled ? positionY(for: .hidden) : bottomY
+            switch layout.positionReference {
+            case .fromSafeArea:
+                ret = _bottomY - safeAreaInsets.top
+            case .fromSuperview:
+                ret = _bottomY
+            }
+            return min(ret, surfaceView.superview!.bounds.height)
+        }()
+        let minConst = allowsTopBuffer ? topMostConst - layout.topInteractionBuffer : topMostConst
+        let maxConst = bottomMostConst + layout.bottomInteractionBuffer
 
-        if layout is FloatingPanelIntrinsicLayout {
-            NSLayoutConstraint.deactivate(fullConstraints)
-            fullConstraints = [
-                surfaceView.topAnchor.constraint(equalTo: vc.layoutGuide.bottomAnchor,
-                                                 constant: -fullInset),
-            ]
-            NSLayoutConstraint.activate(fullConstraints)
+        var const = initialConst + diff
+
+        // Rubberbanding top buffer
+        if behavior.allowsRubberBanding(for: .top), const < topMostConst {
+            let buffer = topMostConst - const
+            const = topMostConst - rubberbandEffect(for: buffer, base: vc.view.bounds.height)
+        }
+
+        // Rubberbanding bottom buffer
+        if behavior.allowsRubberBanding(for: .bottom), const > bottomMostConst {
+            let buffer = const - bottomMostConst
+            const = bottomMostConst + rubberbandEffect(for: buffer, base: vc.view.bounds.height)
+        }
+
+        interactiveTopConstraint?.constant = max(minConst, min(maxConst, const))
+    }
+
+    // According to @chpwn's tweet: https://twitter.com/chpwn/status/285540192096497664
+    // x = distance from the edge
+    // c = constant value, UIScrollView uses 0.55
+    // d = dimension, either width or height
+    private func rubberbandEffect(for buffer: CGFloat, base: CGFloat) -> CGFloat {
+        return (1.0 - (1.0 / ((buffer * 0.55 / base) + 1.0))) * base
+    }
+
+    func activateFixedLayout() {
+        // Must deactivate `interactiveTopConstraint` here
+        NSLayoutConstraint.deactivate(constraint: self.interactiveTopConstraint)
+        self.interactiveTopConstraint = nil
+
+        NSLayoutConstraint.activate(fixedConstraints)
+
+        if vc.contentMode == .fitToBounds {
+            NSLayoutConstraint.activate(constraint: self.bottomConstraint)
         }
     }
 
-    func activateLayout(of state: FloatingPanelPosition) {
+    func activateInteractiveLayout(of state: FloatingPanelPosition) {
         defer {
-            surfaceView.superview!.layoutIfNeeded()
+            layoutSurfaceIfNeeded()
+            log.debug("activateLayout -- surface.presentation = \(self.surfaceView.presentationFrame) surface.frame = \(self.surfaceView.frame)")
         }
 
         var state = state
 
         setBackdropAlpha(of: state)
 
-        NSLayoutConstraint.activate(fixedConstraints)
-
-        if supportedPositions.union([.hidden]).contains(state) == false {
+        if isValid(state) == false {
             state = layout.initialPosition
         }
 
         NSLayoutConstraint.deactivate(fullConstraints + halfConstraints + tipConstraints + offConstraints)
         switch state {
         case .full:
-            NSLayoutConstraint.deactivate(halfConstraints + tipConstraints + offConstraints)
             NSLayoutConstraint.activate(fullConstraints)
         case .half:
-            NSLayoutConstraint.deactivate(fullConstraints + tipConstraints + offConstraints)
             NSLayoutConstraint.activate(halfConstraints)
         case .tip:
-            NSLayoutConstraint.deactivate(fullConstraints + halfConstraints + offConstraints)
             NSLayoutConstraint.activate(tipConstraints)
         case .hidden:
-            NSLayoutConstraint.deactivate(fullConstraints + halfConstraints + tipConstraints)
             NSLayoutConstraint.activate(offConstraints)
         }
     }
 
-    func setBackdropAlpha(of target: FloatingPanelPosition) {
+    func activateLayout(of state: FloatingPanelPosition) {
+        activateFixedLayout()
+        activateInteractiveLayout(of: state)
+    }
+
+    func isValid(_ state: FloatingPanelPosition) -> Bool {
+        return supportedPositions.union([.hidden]).contains(state)
+    }
+
+    private func layoutSurfaceIfNeeded() {
+        #if !TEST
+        guard surfaceView.window != nil else { return }
+        #endif
+        surfaceView.superview?.layoutIfNeeded()
+    }
+
+    private func setBackdropAlpha(of target: FloatingPanelPosition) {
         if target == .hidden {
             self.backdropView.alpha = 0.0
         } else {
@@ -362,11 +557,11 @@ class FloatingPanelLayoutAdapter {
         }
     }
 
-    func checkLayoutConsistance() {
+    private func checkLayoutConsistance() {
         // Verify layout configurations
         assert(supportedPositions.count > 0)
         assert(supportedPositions.contains(layout.initialPosition),
-               "Does not include an initial potision(\(layout.initialPosition)) in supportedPositions(\(supportedPositions))")
+               "Does not include an initial position (\(layout.initialPosition)) in supportedPositions (\(supportedPositions))")
 
         if layout is FloatingPanelIntrinsicLayout {
             assert(layout.insetFor(position: .full) == nil, "Return `nil` for full position on FloatingPanelIntrinsicLayout")
@@ -375,9 +570,47 @@ class FloatingPanelLayoutAdapter {
         if halfInset > 0 {
             assert(halfInset > tipInset, "Invalid half and tip insets")
         }
-        if fullInset > 0 {
+        // The verification isn't working on orientation change(portrait -> landscape)
+        // of a floating panel in tab bar. Because the `safeAreaInsets.bottom` is
+        // updated in delay so that it can be 83.0(not 53.0) even after the surface
+        // and the super view's frame is fit to landscape already.
+        /*if fullInset > 0 {
             assert(middleY > topY, "Invalid insets { topY: \(topY), middleY: \(middleY) }")
             assert(bottomY > topY, "Invalid insets { topY: \(topY), bottomY: \(bottomY) }")
+         }*/
+    }
+
+    func segument(at posY: CGFloat, forward: Bool) -> LayoutSegment {
+        /// ----------------------->Y
+        /// --> forward                <-- backward
+        /// |-------|===o===|-------|  |-------|-------|===o===|
+        /// |-------|-------x=======|  |-------|=======x-------|
+        /// |-------|-------|===o===|  |-------|===o===|-------|
+        /// pos: o/x, seguement: =
+        let sortedPositions = supportedPositions.sorted(by: { $0.rawValue < $1.rawValue })
+
+        let upperIndex: Int?
+        if forward {
+            #if swift(>=4.2)
+            upperIndex = sortedPositions.firstIndex(where: { posY < positionY(for: $0) })
+            #else
+            upperIndex = sortedPositions.index(where: { posY < positionY(for: $0) })
+            #endif
+        } else {
+            #if swift(>=4.2)
+            upperIndex = sortedPositions.firstIndex(where: { posY <= positionY(for: $0) })
+            #else
+            upperIndex = sortedPositions.index(where: { posY <= positionY(for: $0) })
+            #endif
+        }
+
+        switch upperIndex {
+        case 0:
+            return LayoutSegment(lower: nil, upper: sortedPositions.first)
+        case let upperIndex?:
+            return LayoutSegment(lower: sortedPositions[upperIndex - 1], upper: sortedPositions[upperIndex])
+        default:
+            return LayoutSegment(lower: sortedPositions[sortedPositions.endIndex - 1], upper: nil)
         }
     }
 }

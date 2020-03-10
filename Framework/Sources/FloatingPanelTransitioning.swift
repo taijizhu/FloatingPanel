@@ -22,6 +22,12 @@ class FloatingPanelModalTransition: NSObject, UIViewControllerTransitioningDeleg
 }
 
 class FloatingPanelPresentationController: UIPresentationController {
+    override func presentationTransitionWillBegin() {
+        // Must call here even if duplicating on in containerViewWillLayoutSubviews()
+        // Because it let the floating panel present correctly with the presentation animation
+        addFloatingPanel()
+    }
+
     override func presentationTransitionDidEnd(_ completed: Bool) {
         // For non-animated presentation
         if let fpc = presentedViewController as? FloatingPanelController, fpc.position == .hidden {
@@ -30,28 +36,45 @@ class FloatingPanelPresentationController: UIPresentationController {
     }
 
     override func dismissalTransitionDidEnd(_ completed: Bool) {
-        // For non-animated dismissal
-        if let fpc = presentedViewController as? FloatingPanelController, fpc.position != .hidden {
-            fpc.hide(animated: false, completion: nil)
+        if let fpc = presentedViewController as? FloatingPanelController {
+            // For non-animated dismissal
+            if fpc.position != .hidden {
+                fpc.hide(animated: false, completion: nil)
+            }
+            fpc.view.removeFromSuperview()
         }
     }
 
     override func containerViewWillLayoutSubviews() {
         guard
-            let containerView = self.containerView,
-            let fpc = presentedViewController as? FloatingPanelController,
-            let fpView = fpc.view
+            let fpc = presentedViewController as? FloatingPanelController
             else { fatalError() }
 
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleBackdrop(tapGesture:)))
-        fpc.backdropView.addGestureRecognizer(tapGesture)
+        /*
+         * Layout the views managed by `FloatingPanelController` here for the
+         * sake of the presentation and dismissal modally from the controller.
+         */
+        addFloatingPanel()
 
-        containerView.addSubview(fpView)
-        fpView.frame = containerView.bounds //MUST
+        // Forward touch events to the presenting view controller
+        (fpc.view as? FloatingPanelPassThroughView)?.eventForwardingView = presentingViewController.view
+
+        fpc.backdropView.dismissalTapGestureRecognizer.isEnabled = true
     }
 
     @objc func handleBackdrop(tapGesture: UITapGestureRecognizer) {
         presentedViewController.dismiss(animated: true, completion: nil)
+    }
+
+    private func addFloatingPanel() {
+        guard
+            let containerView = self.containerView,
+            let fpc = presentedViewController as? FloatingPanelController
+            else { fatalError() }
+
+        containerView.addSubview(fpc.view)
+        fpc.view.frame = containerView.bounds
+        fpc.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     }
 }
 

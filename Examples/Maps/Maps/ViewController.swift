@@ -21,7 +21,11 @@ class ViewController: UIViewController, MKMapViewDelegate, UISearchBarDelegate, 
 
         // Initialize FloatingPanelController and add the view
         fpc.surfaceView.backgroundColor = .clear
-        fpc.surfaceView.cornerRadius = 9.0
+        if #available(iOS 11, *) {
+            fpc.surfaceView.cornerRadius = 9.0
+        } else {
+            fpc.surfaceView.cornerRadius = 0.0
+        }
         fpc.surfaceView.shadowHidden = false
 
         searchVC = storyboard?.instantiateViewController(withIdentifier: "SearchPanel") as? SearchPanelViewController
@@ -103,6 +107,7 @@ class ViewController: UIViewController, MKMapViewDelegate, UISearchBarDelegate, 
             let progress = max(0.0, min((tipY  - y) / 44.0, 1.0))
             self.searchVC.tableView.alpha = progress
         }
+        debugPrint("NearbyPosition : ",vc.nearbyPosition)
     }
 
     func floatingPanelWillBeginDragging(_ vc: FloatingPanelController) {
@@ -135,29 +140,45 @@ class SearchPanelViewController: UIViewController, UITableViewDataSource, UITabl
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var searchBar: UISearchBar!
     @IBOutlet weak var visualEffectView: UIVisualEffectView!
-    
+
+    // For iOS 10 only
+    private lazy var shadowLayer: CAShapeLayer = CAShapeLayer()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.dataSource = self
         tableView.delegate = self
         searchBar.placeholder = "Search for a place or address"
-        let textField = searchBar.value(forKey: "_searchField") as! UITextField
-        textField.font = UIFont(name: textField.font!.fontName, size: 15.0)
+        searchBar.setSearchText(fontSize: 15.0)
 
         hideHeader()
-
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        if #available(iOS 10, *) {
+        if #available(iOS 11, *) {
+        } else {
+            // Exmaple: Add rounding corners on iOS 10
             visualEffectView.layer.cornerRadius = 9.0
             visualEffectView.clipsToBounds = true
+
+            // Exmaple: Add shadow manually on iOS 10
+            view.layer.insertSublayer(shadowLayer, at: 0)
+            let rect = visualEffectView.frame
+            let path = UIBezierPath(roundedRect: rect,
+                                    byRoundingCorners: [.topLeft, .topRight],
+                                    cornerRadii: CGSize(width: 9.0, height: 9.0))
+            shadowLayer.frame = visualEffectView.frame
+            shadowLayer.shadowPath = path.cgPath
+            shadowLayer.shadowColor = UIColor.black.cgColor
+            shadowLayer.shadowOffset = CGSize(width: 0.0, height: 1.0)
+            shadowLayer.shadowOpacity = 0.2
+            shadowLayer.shadowRadius = 3.0
         }
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 2
+        return 100
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -168,12 +189,10 @@ class SearchPanelViewController: UIViewController, UITableViewDataSource, UITabl
                 cell.iconImageView.image = UIImage(named: "mark")
                 cell.titleLabel.text = "Marked Location"
                 cell.subTitleLabel.text = "Golden Gate Bridge, San Francisco"
-            case 1:
+            default:
                 cell.iconImageView.image = UIImage(named: "like")
                 cell.titleLabel.text = "Favorites"
                 cell.subTitleLabel.text = "0 Places"
-            default:
-                break
             }
         }
         return cell
@@ -250,5 +269,17 @@ class SearchHeaderView: UIView {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         self.clipsToBounds = true
+    }
+}
+
+extension UISearchBar {
+    func setSearchText(fontSize: CGFloat) {
+        #if swift(>=5.1) // Xcode 11 or later
+            let font = searchTextField.font
+            searchTextField.font = font?.withSize(fontSize)
+        #else
+            let textField = value(forKey: "_searchField") as! UITextField
+            textField.font = textField.font?.withSize(fontSize)
+        #endif
     }
 }
