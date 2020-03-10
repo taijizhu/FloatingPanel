@@ -5,29 +5,12 @@
 
 import UIKit
 
-<<<<<<< HEAD
-@objc class FloatingPanelSurfaceContentView: UIView {}
-
-=======
->>>>>>> upstream/master
 /// A view that presents a surface interface in a floating panel.
 @objc public class FloatingPanelSurfaceView: UIView {
 
     /// A GrabberHandleView object displayed at the top of the surface view.
     ///
     /// To use a custom grabber handle, hide this and then add the custom one
-<<<<<<< HEAD
-    /// to the surface view at appropirate coordinates.
-    @objc public var grabberHandle: GrabberHandleView!
-
-    /// The height of the grabber bar area
-    @objc public static var topGrabberBarHeight: CGFloat {
-        return Default.grabberTopPadding * 2 + GrabberHandleView.Default.height // 17.0
-    }
-
-    /// A UIView object that can have the surface view added to it.
-    @objc public var contentView: UIView!
-=======
     /// to the surface view at appropriate coordinates.
     public let grabberHandle: GrabberHandleView = GrabberHandleView()
 
@@ -59,7 +42,6 @@ import UIKit
             self.setNeedsUpdateConstraints()
         }
     }
->>>>>>> upstream/master
 
     private var color: UIColor? = .white { didSet { setNeedsLayout() } }
     var bottomOverflow: CGFloat = 0.0 // Must not call setNeedsLayout()
@@ -73,14 +55,10 @@ import UIKit
     ///
     /// `self.contentView` is masked with the top rounded corners automatically on iOS 11 and later.
     /// On iOS 10, they are not automatically masked because of a UIVisualEffectView issue. See https://forums.developer.apple.com/thread/50854
-<<<<<<< HEAD
-    @objc public var cornerRadius: CGFloat = 0.0 { didSet { setNeedsLayout() } }
-=======
     public var cornerRadius: CGFloat {
         set { containerView.layer.cornerRadius = newValue; setNeedsLayout() }
         get { return containerView.layer.cornerRadius }
     }
->>>>>>> upstream/master
 
     /// A Boolean indicating whether the surface shadow is displayed.
     @objc public var shadowHidden: Bool = false  { didSet { setNeedsLayout() } }
@@ -234,16 +212,9 @@ import UIKit
         }
     }
 
-<<<<<<< HEAD
-    @objc func set(bottomOverflow: CGFloat) {
-        self.bottomOverflow = bottomOverflow
-        updateLayers()
-        updateContentViewMask()
-=======
     private func updateBorder() {
         containerView.layer.borderColor = borderColor?.cgColor
         containerView.layer.borderWidth = borderWidth
->>>>>>> upstream/master
     }
 
     func add(contentView: UIView) {
@@ -252,18 +223,11 @@ import UIKit
         /* contentView.frame = bounds */ // MUST NOT: Because the top safe area inset of a content VC will be incorrect.
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
-<<<<<<< HEAD
-    @objc func add(childView: UIView) {
-        contentView.addSubview(childView)
-        childView.frame = contentView.bounds
-        childView.translatesAutoresizingMaskIntoConstraints = false
-=======
         let topConstraint = contentView.topAnchor.constraint(equalTo: topAnchor, constant: containerMargins.top + contentInsets.top)
         let leftConstraint = contentView.leftAnchor.constraint(equalTo: leftAnchor, constant: containerMargins.left + contentInsets.left)
         let rightConstraint = rightAnchor.constraint(equalTo: contentView.rightAnchor, constant: containerMargins.right + contentInsets.right)
         let heightPadding = containerMargins.top + containerMargins.bottom + contentInsets.top + contentInsets.bottom
         let heightConstraint = contentView.heightAnchor.constraint(equalTo: heightAnchor, constant: -heightPadding)
->>>>>>> upstream/master
         NSLayoutConstraint.activate([
             topConstraint,
             leftConstraint,

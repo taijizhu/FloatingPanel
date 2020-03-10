@@ -164,7 +164,7 @@ public enum FloatingPanelPosition: Int {
     }
 
     /// The current position of the floating panel controller's contents.
-    @objc public var position: FloatingPanelPosition {
+    public var position: FloatingPanelPosition {
         return floatingPanel.state
     }
 
@@ -196,7 +196,7 @@ public enum FloatingPanelPosition: Int {
 
     /// The view controller responsible for the content portion of the floating panel.
     @objc public var contentViewController: UIViewController? {
-        set { setContent(contentViewController: newValue) }
+        set { _contentViewController = newValue }
         get { return _contentViewController }
     }
     
@@ -526,7 +526,7 @@ public enum FloatingPanelPosition: Int {
     ///     - to: Pass a FloatingPanelPosition value to move the surface view to the position.
     ///     - animated: Pass true to animate the presentation; otherwise, pass false.
     ///     - completion: The block to execute after the view controller has finished moving. This block has no return value and takes no parameters. You may specify nil for this parameter.
-    @objc public func move(to: FloatingPanelPosition, animated: Bool, completion: (() -> Void)? = nil) {
+    public func move(to: FloatingPanelPosition, animated: Bool, completion: (() -> Void)? = nil) {
         precondition(floatingPanel.layoutAdapter.vc != nil, "Use show(animated:completion)")
         floatingPanel.move(to: to, animated: animated, completion: completion)
     }
