@@ -196,7 +196,7 @@ public enum FloatingPanelPosition: Int {
 
     /// The view controller responsible for the content portion of the floating panel.
     @objc public var contentViewController: UIViewController? {
-        set { _contentViewController = newValue }
+        set { set(contentViewController: newValue) }
         get { return _contentViewController }
     }
     
@@ -220,24 +220,21 @@ public enum FloatingPanelPosition: Int {
     private var safeAreaInsetsObservation: NSKeyValueObservation?
     private let modalTransition = FloatingPanelModalTransition()
 
-    @objc required public init?(coder aDecoder: NSCoder) {
+    required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setUp()
     }
-    @objc required public init?(name: String, bundle: Bundle) {
-        super.init(nibName: name, bundle: bundle)
-           setUp()
-       }
+   
     /// Initialize a newly created floating panel controller.
     public init(delegate: FloatingPanelControllerDelegate? = nil) {
         super.init(nibName: nil, bundle: nil)
         self.delegate = delegate
         setUp()
     }
-
+    
     private func setUp() {
         // kcao: disable this since it is causing other problems.
-        // _ = FloatingPanelController.dismissSwizzling
+         _ = FloatingPanelController.dismissSwizzling
 
         modalPresentationStyle = .custom
         transitioningDelegate = modalTransition
