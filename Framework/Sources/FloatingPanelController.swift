@@ -609,7 +609,7 @@ public enum FloatingPanelPosition: Int {
     ///
     /// - Parameters:
     ///     - scrollView: Specify a scroll view to continuously and seamlessly work in concert with interactions of the surface view or nil to cancel it.
-    public func track(scrollView: UIScrollView?) {
+    @objc public func track(scrollView: UIScrollView?) {
         guard let scrollView = scrollView else {
             floatingPanel.scrollView = nil
             return
@@ -646,7 +646,7 @@ public enum FloatingPanelPosition: Int {
     /// then it calls `layoutIfNeeded()` of the root view to force the view
     /// to update the floating panel's layout immediately. It can be called in an
     /// animation block.
-    public func updateLayout() {
+    @objc public func updateLayout() {
         reloadLayout(for: traitCollection)
         activateLayout()
     }
