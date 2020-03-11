@@ -531,8 +531,28 @@ public enum FloatingPanelPosition: Int {
         floatingPanel.move(to: to, animated: animated, completion: completion)
     }
 
+    @objc public func moveFull(animated: Bool, completion: (() -> Void)? = nil) {
+         precondition(floatingPanel.layoutAdapter.vc != nil, "Use show(animated:completion)")
+        floatingPanel.move(to: FloatingPanelPosition.full, animated: animated, completion: completion)
+     }
+
+    @objc public func moveTip(animated: Bool, completion: (() -> Void)? = nil) {
+          precondition(floatingPanel.layoutAdapter.vc != nil, "Use show(animated:completion)")
+        floatingPanel.move(to: FloatingPanelPosition.tip, animated: animated, completion: completion)
+      }
+
+    @objc public func moveHalf(animated: Bool, completion: (() -> Void)? = nil) {
+          precondition(floatingPanel.layoutAdapter.vc != nil, "Use show(animated:completion)")
+        floatingPanel.move(to: FloatingPanelPosition.half, animated: animated, completion: completion)
+      }
+    
+    @objc public func moveHidden(animated: Bool, completion: (() -> Void)? = nil) {
+             precondition(floatingPanel.layoutAdapter.vc != nil, "Use show(animated:completion)")
+           floatingPanel.move(to: FloatingPanelPosition.hidden, animated: animated, completion: completion)
+    }
+
     /// Sets the view controller responsible for the content portion of the floating panel.
-    public func set(contentViewController: UIViewController?) {
+    @objc public func set(contentViewController: UIViewController?) {
         if let vc = _contentViewController {
             #if swift(>=4.2)
             vc.willMove(toParent: nil)
