@@ -20,7 +20,7 @@ import UIKit
     } }
 
     /// The height of the grabber bar area
-    public var topGrabberBarHeight: CGFloat {
+    @objc public var topGrabberBarHeight: CGFloat {
         return grabberTopPadding * 2 + grabberHandleHeight
     }
 
