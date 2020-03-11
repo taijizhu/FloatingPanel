@@ -224,7 +224,10 @@ public enum FloatingPanelPosition: Int {
         super.init(coder: aDecoder)
         setUp()
     }
-
+    @objc required public init?(name: String, bundle: Bundle) {
+        super.init(nibName: name, bundle: bundle)
+           setUp()
+       }
     /// Initialize a newly created floating panel controller.
     public init(delegate: FloatingPanelControllerDelegate? = nil) {
         super.init(nibName: nil, bundle: nil)
