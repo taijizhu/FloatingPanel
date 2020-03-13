@@ -225,10 +225,10 @@ public extension FloatingPanelControllerDelegate {
         setUp()
     }
     
-    @objc required public init(nibName nibNameorNil:String?,nibBundleOrNil:Bundle?){
-        super.init(nibName:nibNameorNil,bundle:nibBundleOrNil)
-    }
-   
+    @objc required public init?(nibName nibNameorNil:String?,nibBundleOrNil:Bundle?){
+          super.init(nibName:nibNameorNil,bundle:nibBundleOrNil)
+      }
+    
     /// Initialize a newly created floating panel controller.
     public init(delegate: FloatingPanelControllerDelegate? = nil) {
         super.init(nibName: nil, bundle: nil)
