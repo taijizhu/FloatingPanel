@@ -77,7 +77,7 @@ public extension FloatingPanelControllerDelegate {
 }
 
 
-public enum FloatingPanelPosition: Int {
+@objc public enum FloatingPanelPosition: Int {
     case full
     case half
     case tip
@@ -220,12 +220,12 @@ public enum FloatingPanelPosition: Int {
     private var safeAreaInsetsObservation: NSKeyValueObservation?
     private let modalTransition = FloatingPanelModalTransition()
 
-    required public init?(coder aDecoder: NSCoder) {
+    @objc required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setUp()
     }
     
-    required public init(nibName nibNameorNil:String?,nibBundleOrNil:Bundle?){
+    @objc required public init(nibName nibNameorNil:String?,nibBundleOrNil:Bundle?){
         super.init(nibName:nibNameorNil,bundle:nibBundleOrNil)
     }
    
