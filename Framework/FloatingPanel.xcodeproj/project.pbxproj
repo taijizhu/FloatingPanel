@@ -9,8 +9,7 @@
 /* Begin PBXBuildFile section */
 		3AD0CE2A241BF28900A3C0D5 /* SearchPanelViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD0CE29241BF28900A3C0D5 /* SearchPanelViewController.swift */; };
 		3AD0CE2D241C715F00A3C0D5 /* SnapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AD0CE2B241C715F00A3C0D5 /* SnapKit.framework */; };
-		3AD0CE31241C72A300A3C0D5 /* SnapKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 3AD0CE2B241C715F00A3C0D5 /* SnapKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		3AD0CE3C241C73F900A3C0D5 /* SnapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AD0CE39241C73ED00A3C0D5 /* SnapKit.framework */; };
+		3AD0CE46241CE31900A3C0D5 /* SnapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AD0CE39241C73ED00A3C0D5 /* SnapKit.framework */; };
 		542753C622C49A6E00D17955 /* FloatingPanelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542753C522C49A6E00D17955 /* FloatingPanelLayoutTests.swift */; };
 		54352E9621A51A2500CBCA08 /* FloatingPanelTransitioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54352E9521A51A2500CBCA08 /* FloatingPanelTransitioning.swift */; };
 		54352E9821A521CA00CBCA08 /* FloatingPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54352E9721A521CA00CBCA08 /* FloatingPanelView.swift */; };
@@ -79,7 +78,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				3AD0CE31241C72A300A3C0D5 /* SnapKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -123,7 +121,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3AD0CE3C241C73F900A3C0D5 /* SnapKit.framework in Frameworks */,
+				3AD0CE46241CE31900A3C0D5 /* SnapKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
