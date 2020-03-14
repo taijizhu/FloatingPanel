@@ -229,6 +229,7 @@ public extension FloatingPanelControllerDelegate {
           super.init(nibName:nibNameorNil,bundle:nibBundleOrNil)
       }
     
+ 
     /// Initialize a newly created floating panel controller.
     public init(delegate: FloatingPanelControllerDelegate? = nil) {
         super.init(nibName: nil, bundle: nil)
